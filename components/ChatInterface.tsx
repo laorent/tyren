@@ -1,0 +1,259 @@
+'use client'
+
+import { useState, useRef, useEffect } from 'react'
+import styles from './ChatInterface.module.css'
+import MessageList from '@/components/MessageList'
+import InputArea from '@/components/InputArea'
+import { getAuthToken } from '@/lib/auth'
+
+export interface Message {
+    id: string
+    role: 'user' | 'assistant'
+    content: string
+    images?: string[]
+    timestamp: number
+}
+
+export default function ChatInterface() {
+    const [messages, setMessages] = useState<Message[]>([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [searchEnabled, setSearchEnabled] = useState(false)
+    const [inputValue, setInputValue] = useState('')
+    const abortControllerRef = useRef<AbortController | null>(null)
+    const isSendingRef = useRef(false) // Re-entrancy guard
+
+    // Load messages from localStorage on mount
+    useEffect(() => {
+        const savedMessages = localStorage.getItem('tyren_chat_history')
+        if (savedMessages) {
+            try {
+                setMessages(JSON.parse(savedMessages))
+            } catch (e) {
+                console.error('Failed to load chat history:', e)
+            }
+        }
+    }, [])
+
+    // Debounced save to localStorage to save resources during streaming
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (messages.length > 0) {
+                localStorage.setItem('tyren_chat_history', JSON.stringify(messages))
+            } else {
+                localStorage.removeItem('tyren_chat_history')
+            }
+        }, 800);
+        return () => clearTimeout(timer);
+    }, [messages])
+
+    const handleSendMessage = async (content: string, images: string[]) => {
+        if (!content.trim() && images.length === 0) return
+        if (isSendingRef.current) return // Prevent duplicate requests
+
+        isSendingRef.current = true;
+
+        // Add user message
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            content,
+            images,
+            timestamp: Date.now(),
+        }
+
+        setMessages(prev => [...prev, userMessage])
+        setIsLoading(true)
+
+        // Create assistant message placeholder
+        const assistantMessageId = (Date.now() + 1).toString()
+        const assistantMessage: Message = {
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+            timestamp: Date.now(),
+        }
+        setMessages(prev => [...prev, assistantMessage])
+
+        try {
+            abortControllerRef.current = new AbortController()
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                },
+                body: JSON.stringify({
+                    // Maximize free tier: Only send last 12 messages and prune images from history
+                    messages: [...messages, userMessage]
+                        .slice(-12) // Sliding window: Keep last 12 messages
+                        .map((msg, idx, arr) => {
+                            const isLastMessage = idx === arr.length - 1;
+                            return {
+                                role: msg.role,
+                                content: msg.content,
+                                // Only send images for the CURRENT (last) message to save tokens
+                                // Gemini keeps context in conversation, so repeated image bits are wasteful
+                                images: isLastMessage ? msg.images : undefined,
+                            };
+                        }),
+                    searchEnabled,
+                }),
+                signal: abortControllerRef.current.signal,
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || `请求失败 (${response.status})`)
+            }
+
+            const reader = response.body?.getReader()
+            const decoder = new TextDecoder()
+
+            if (!reader) {
+                throw new Error('No response body')
+            }
+
+            let accumulatedContent = ''
+
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+
+                const chunk = decoder.decode(value, { stream: true })
+                const lines = chunk.split('\n')
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6)
+                        if (data === '[DONE]') continue
+
+                        try {
+                            const parsed = JSON.parse(data)
+                            if (parsed.error) {
+                                throw new Error(parsed.error)
+                            }
+                            if (parsed.content) {
+                                accumulatedContent += parsed.content
+                                setMessages(prev =>
+                                    prev.map(msg =>
+                                        msg.id === assistantMessageId
+                                            ? { ...msg, content: accumulatedContent }
+                                            : msg
+                                    )
+                                )
+                            }
+                        } catch (e) {
+                            // Ignore parse errors
+                        }
+                    }
+                }
+            }
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                console.log('Request aborted')
+            } else {
+                console.error('Error:', error)
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === assistantMessageId
+                            ? { ...msg, content: `⚠️ 出错了：${error.message}` }
+                            : msg
+                    )
+                )
+            }
+        } finally {
+            setIsLoading(false)
+            isSendingRef.current = false
+            abortControllerRef.current = null
+        }
+    }
+
+    const handleClearChat = () => {
+        if (confirm('确定要清除所有对话吗？')) {
+            setMessages([])
+        }
+    }
+
+    const handleStopGeneration = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+            setIsLoading(false)
+        }
+    }
+
+    const handleSelectSuggestion = (text: string) => {
+        setInputValue(text)
+        // Reset inputValue after a short delay so it can be re-triggered if needed
+        setTimeout(() => setInputValue(''), 100)
+    }
+
+    return (
+        <div className={styles.container}>
+            <header className={styles.header}>
+                <div className={styles.headerContent}>
+                    <div className={styles.logoSection}>
+                        <div className={styles.logoIcon}>
+                            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="h-tech-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#4facfe" />
+                                        <stop offset="100%" stopColor="#00f2fe" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 L50 10Z" stroke="url(#h-tech-grad)" strokeWidth="4" />
+                                <circle cx="50" cy="50" r="15" fill="url(#h-tech-grad)" />
+                                <path d="M50 10 L50 35 M50 65 L50 90 M15 30 L40 45 M60 55 L85 70 M15 70 L40 55 M60 45 L85 30" stroke="url(#h-tech-grad)" strokeWidth="3" />
+                            </svg>
+                        </div>
+                        <h1 className={styles.title}>Tyren</h1>
+                    </div>
+
+                    <div className={styles.controls}>
+                        <button
+                            className={`${styles.controlButton} ${searchEnabled ? styles.active : ''}`}
+                            onClick={() => setSearchEnabled(!searchEnabled)}
+                            title={searchEnabled ? '关闭联网搜索' : '开启联网搜索'}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
+                            <span className={styles.controlLabel}>
+                                {searchEnabled ? '联网中' : '联网'}
+                            </span>
+                        </button>
+
+                        <button
+                            className={styles.controlButton}
+                            onClick={handleClearChat}
+                            title="清除对话"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            <span className={styles.controlLabel}>清除</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main className={styles.main}>
+                <MessageList
+                    messages={messages}
+                    isLoading={isLoading}
+                    onSelectSuggestion={handleSelectSuggestion}
+                />
+            </main>
+
+            <footer className={styles.footer}>
+                <InputArea
+                    onSend={handleSendMessage}
+                    disabled={isLoading}
+                    onStop={handleStopGeneration}
+                    externalContent={inputValue}
+                />
+            </footer>
+        </div>
+    )
+}
