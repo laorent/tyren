@@ -197,13 +197,13 @@ export default function ChatInterface() {
                             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <defs>
                                     <linearGradient id="h-tech-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#4facfe" />
-                                        <stop offset="100%" stopColor="#00f2fe" />
+                                        <stop offset="0%" stopColor="#00E5FF" />
+                                        <stop offset="100%" stopColor="#0072FF" />
                                     </linearGradient>
                                 </defs>
-                                <path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 L50 10Z" stroke="url(#h-tech-grad)" strokeWidth="4" />
-                                <circle cx="50" cy="50" r="15" fill="url(#h-tech-grad)" />
-                                <path d="M50 10 L50 35 M50 65 L50 90 M15 30 L40 45 M60 55 L85 70 M15 70 L40 55 M60 45 L85 30" stroke="url(#h-tech-grad)" strokeWidth="3" />
+                                <path d="M50 15 L80.3 32.5 L80.3 67.5 L50 85 L19.7 67.5 L19.7 32.5 Z" stroke="url(#h-tech-grad)" strokeWidth="4" strokeDasharray="5 5" strokeLinejoin="round" />
+                                <circle cx="50" cy="50" r="12" fill="url(#h-tech-grad)" />
+                                <path d="M50 15 L50 38 M80.3 32.5 L58.7 45 M80.3 67.5 L58.7 55 M50 85 L50 62 M19.7 67.5 L41.3 55 M19.7 32.5 L41.3 45" stroke="url(#h-tech-grad)" strokeWidth="3" strokeLinecap="round" />
                             </svg>
                         </div>
                         <h1 className={styles.title}>Tyren</h1>
