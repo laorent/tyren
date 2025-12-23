@@ -21,7 +21,7 @@
 | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | 您的 Gemini API 密钥 | `AIzaSy...` |
 | `WEB_ACCESS_PASSWORD` | 用于访问网页的密码 | `my_secure_password` |
-| `GEMINI_MODEL` | 使用的模型名称 (可选) | `gemini-2.5-flash-exp` |
+| `GEMINI_MODEL` | 使用的模型名称 (可选) | `gemini-2.5-flash` |
 
 ## 本地开发
 
