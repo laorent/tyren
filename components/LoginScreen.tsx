@@ -98,7 +98,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                         {isLoading ? (
                             <span className={styles.spinner}></span>
                         ) : (
-                            '进入聊天'
+                            '开始连接'
                         )}
                     </button>
                 </form>
