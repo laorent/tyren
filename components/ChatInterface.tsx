@@ -230,9 +230,6 @@ export default function ChatInterface() {
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                             </svg>
-                            <span className={styles.controlLabel}>
-                                {searchEnabled ? '联网中' : '联网'}
-                            </span>
                         </button>
 
                         <button
@@ -243,7 +240,6 @@ export default function ChatInterface() {
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                             </svg>
-                            <span className={styles.controlLabel}>清除</span>
                         </button>
 
                         <div className={styles.themeToggleWrapper}>
