@@ -1,9 +1,9 @@
-const CACHE_NAME = 'tyren-v3'; // Increased version to force update
+const CACHE_NAME = 'tyren-v4';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
-    '/icon-192.svg',
-    '/icon-512.svg'
+    '/icon-192.svg?v=2',
+    '/icon-512.svg?v=2'
 ];
 
 // Force update immediately
