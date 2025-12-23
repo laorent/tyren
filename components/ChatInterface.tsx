@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import styles from './ChatInterface.module.css'
 import MessageList from '@/components/MessageList'
 import InputArea from '@/components/InputArea'
+import ThemeToggle from '@/components/ThemeToggle'
 import { getAuthToken } from '@/lib/auth'
 
 export interface Message {
@@ -103,6 +104,16 @@ export default function ChatInterface() {
             })
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    const text = await response.clone().text().catch(() => '')
+                    if (text === 'Unauthorized') {
+                        // Session token is invalid, force logout
+                        localStorage.removeItem('tyren_auth_token')
+                        sessionStorage.removeItem('tyren_auth_token')
+                        window.location.reload()
+                        return
+                    }
+                }
                 const errorData = await response.json().catch(() => ({}))
                 throw new Error(errorData.error || `请求失败 (${response.status})`)
             }
@@ -234,6 +245,10 @@ export default function ChatInterface() {
                             </svg>
                             <span className={styles.controlLabel}>清除</span>
                         </button>
+
+                        <div className={styles.themeToggleWrapper}>
+                            <ThemeToggle />
+                        </div>
                     </div>
                 </div>
             </header>

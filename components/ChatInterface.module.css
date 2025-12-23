@@ -7,7 +7,7 @@
 }
 
 .header {
-    background: rgba(20, 24, 48, 0.9);
+    background: var(--card-bg);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border-color);
     padding: 16px 20px;
@@ -170,4 +170,10 @@
     .footer {
         padding: 10px 12px 12px;
     }
+}
+
+.themeToggleWrapper {
+    margin-left: 8px;
+    display: flex;
+    align-items: center;
 }

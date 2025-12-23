@@ -9,6 +9,7 @@ export async function POST(req: Request) {
         const expectedToken = Buffer.from(`${sessionSecret}_valid_session`).toString('base64');
 
         if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
+            console.warn(`[Auth] Unauthorized access attempt. Header: ${authHeader ? 'Present' : 'Missing'}`);
             return new Response('Unauthorized', { status: 401 })
         }
 
