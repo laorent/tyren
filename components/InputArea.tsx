@@ -85,8 +85,13 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
 
                     canvas.width = width;
                     canvas.height = height;
+                    // Fill white background for transparent images before JPEG compression
                     const ctx = canvas.getContext('2d');
-                    ctx?.drawImage(img, 0, 0, width, height);
+                    if (ctx) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                    }
 
                     // Compress as JPEG with 0.7 quality to balance detail and token size
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);

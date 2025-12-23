@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tyren-v2'; // Changed name to force update
+const CACHE_NAME = 'tyren-v3'; // Increased version to force update
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
