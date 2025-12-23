@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- 🚀 **模型支持**: 默认使用 Gemini 2.0 Flash (可配置)。
+- 🚀 **模型支持**: 默认使用 Gemini 2.5 Flash (可配置)。
 - 🔒 **安全性**: 包含网页访问密码验证。
 - 💬 **对话功能**: 支持流式响应和长上下文对话。
 - 🖼️ **多模态**: 支持图像上传与分析。
@@ -21,7 +21,7 @@
 | :--- | :--- | :--- |
 | `GEMINI_API_KEY` | 您的 Gemini API 密钥 | `AIzaSy...` |
 | `WEB_ACCESS_PASSWORD` | 用于访问网页的密码 | `my_secure_password` |
-| `GEMINI_MODEL` | 使用的模型名称 (可选) | `gemini-2.0-flash-exp` |
+| `GEMINI_MODEL` | 使用的模型名称 (可选) | `gemini-2.5-flash-exp` |
 
 ## 本地开发
 
