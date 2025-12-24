@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import { Message } from './ChatInterface'
 import styles from './MessageList.module.css'
 
@@ -300,7 +303,8 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                                     <div className={styles.messageText}>
                                         {message.role === 'assistant' ? (
                                             <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
+                                                remarkPlugins={[remarkGfm, remarkMath]}
+                                                rehypePlugins={[rehypeKatex]}
                                                 components={{
                                                     code({ node, inline, className, children, ...props }: any) {
                                                         const match = /language-(\w+)/.exec(className || '')

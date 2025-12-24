@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
         const { messages, searchEnabled } = await req.json()
         const apiKey = process.env.GEMINI_API_KEY
-        const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp'
+        const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
         if (!apiKey) {
             return new Response('API Key not configured', { status: 500 })
