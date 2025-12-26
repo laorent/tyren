@@ -311,15 +311,27 @@ hr {
   margin: 24px 0;
 }
 
-/* Math Styles */
+/* Math Styles - Enhanced for better visibility */
 .katex-display {
-  margin: 1em 0;
+  margin: 1.5em 0;
   overflow-x: auto;
   overflow-y: hidden;
+  padding: 0.5em 0;
+  /* Add smooth scrolling for math formulas */
+  -webkit-overflow-scrolling: touch;
 }
 
+/* Ensure math font size is legible but fits */
 .katex {
-  font-size: 1.1em;
+  font-size: 1.15em;
+  line-height: 1.2;
+  text-rendering: optimizeLegibility;
+}
+
+/* Make sure errors in math are still visible but distinct */
+.katex-error {
+  color: var(--error);
+  font-family: monospace;
 }
 
 /* Focus Outline */

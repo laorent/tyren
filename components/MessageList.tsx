@@ -7,6 +7,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { Message } from './ChatInterface'
+import ErrorBoundary from './ErrorBoundary'
 import styles from './MessageList.module.css'
 
 interface MessageListProps {
@@ -193,13 +194,27 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
         }
     }, [messages.length])
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const prevMessagesLength = useRef(messages.length)
+
+    const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+        messagesEndRef.current?.scrollIntoView({ behavior })
     }
 
     useEffect(() => {
-        scrollToBottom()
-    }, [messages])
+        // Fix for mobile: Use 'auto' (instant) scroll during streaming to prevent
+        // layout thrashing and "jumping" glitches caused by overlapping smooth animations.
+        // Only use smooth scroll when a completely new message bubble is added.
+        const isNewMessage = messages.length > prevMessagesLength.current
+        const isStreamingUpdate = messages.length === prevMessagesLength.current && isLoading
+
+        if (isNewMessage) {
+            scrollToBottom('smooth')
+        } else if (isStreamingUpdate) {
+            scrollToBottom('auto')
+        }
+
+        prevMessagesLength.current = messages.length
+    }, [messages, isLoading])
 
     if (messages.length === 0) {
         return (
@@ -302,28 +317,35 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                                 {message.content && (
                                     <div className={styles.messageText}>
                                         {message.role === 'assistant' ? (
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm, remarkMath]}
-                                                rehypePlugins={[rehypeKatex]}
-                                                components={{
-                                                    code({ node, inline, className, children, ...props }: any) {
-                                                        const match = /language-(\w+)/.exec(className || '')
-                                                        return !inline ? (
-                                                            <CodeBlock
-                                                                language={match ? match[1] : ''}
-                                                                value={String(children).replace(/\n$/, '')}
-                                                                {...props}
-                                                            />
-                                                        ) : (
-                                                            <code className={className} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        )
-                                                    }
-                                                }}
-                                            >
-                                                {message.content}
-                                            </ReactMarkdown>
+                                            <ErrorBoundary fallback={
+                                                <div className={styles.errorState}>
+                                                    <p>⚠️ 内容渲染出错（可能是复杂的数学公式导致的）</p>
+                                                    <pre className={styles.rawContent}>{message.content}</pre>
+                                                </div>
+                                            }>
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm, remarkMath]}
+                                                    rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                                    components={{
+                                                        code({ node, inline, className, children, ...props }: any) {
+                                                            const match = /language-(\w+)/.exec(className || '')
+                                                            return !inline ? (
+                                                                <CodeBlock
+                                                                    language={match ? match[1] : ''}
+                                                                    value={String(children).replace(/\n$/, '')}
+                                                                    {...props}
+                                                                />
+                                                            ) : (
+                                                                <code className={className} {...props}>
+                                                                    {children}
+                                                                </code>
+                                                            )
+                                                        }
+                                                    }}
+                                                >
+                                                    {message.content}
+                                                </ReactMarkdown>
+                                            </ErrorBoundary>
                                         ) : (
                                             <p>{message.content}</p>
                                         )}

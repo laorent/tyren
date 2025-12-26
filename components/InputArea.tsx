@@ -105,7 +105,24 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
         const files = e.target.files;
         if (!files) return;
 
-        const uploadPromises = Array.from(files).map(file => compressImage(file));
+        // Safety check: Prevent massive files from crashing the browser (especially on mobile)
+        const MAX_FILE_SIZE_MB = 10;
+        const validFiles: File[] = [];
+
+        for (let i = 0; i < files.length; i++) {
+            if (files[i].size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                alert(`图片 "${files[i].name}" 过大 (超过 ${MAX_FILE_SIZE_MB}MB)，已自动忽略。`);
+                continue;
+            }
+            validFiles.push(files[i]);
+        }
+
+        if (validFiles.length === 0) {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        const uploadPromises = validFiles.map(file => compressImage(file));
         const compressedImages = await Promise.all(uploadPromises);
 
         setImages(prev => [...prev, ...compressedImages]);

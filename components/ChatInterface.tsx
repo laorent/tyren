@@ -38,10 +38,16 @@ export default function ChatInterface() {
     // Debounced save to localStorage to save resources during streaming
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (messages.length > 0) {
-                localStorage.setItem('tyren_chat_history', JSON.stringify(messages))
-            } else {
-                localStorage.removeItem('tyren_chat_history')
+            try {
+                if (messages.length > 0) {
+                    localStorage.setItem('tyren_chat_history', JSON.stringify(messages))
+                } else {
+                    localStorage.removeItem('tyren_chat_history')
+                }
+            } catch (e) {
+                console.warn('LocalStorage full, failed to save history:', e)
+                // Optional: We could try to slice the messages array to save only the most recent ones here
+                // but for now, just preventing the crash is the most important step for stability.
             }
         }, 800);
         return () => clearTimeout(timer);
