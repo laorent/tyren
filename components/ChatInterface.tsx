@@ -196,7 +196,7 @@ export default function ChatInterface() {
                     if (line.trim() === '') continue
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6)
-                        if (data === '[DONE]') continue
+                        if (data === '[DONE]') continue // We might find [DONE] in the buffer
                         try {
                             const parsed = JSON.parse(data)
                             if (parsed.content) {
@@ -208,6 +208,20 @@ export default function ChatInterface() {
                     }
                 }
             }
+
+            // Check if we received the explicit [DONE] signal or if the stream ended naturally.
+            // Note: In this simple implementation, we assume if we have content, it's good.
+            // But if the loop broke early due to error, we already handled it in catch.
+            // We can check if the response was cut off by checking content length vs expected? Hard.
+            // Instead, let's just ensure the final update happens.
+
+            setMessages(prev =>
+                prev.map(msg =>
+                    msg.id === assistantMessageId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                )
+            )
 
             // Final update to ensure everything is synced
             setMessages(prev =>
