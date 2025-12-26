@@ -195,35 +195,49 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
                     {message.content && (
                         <div className={styles.messageText}>
                             {message.role === 'assistant' ? (
-                                <ErrorBoundary fallback={
-                                    <div className={styles.errorState}>
-                                        <p>⚠️ 内容渲染出错</p>
-                                        <pre className={styles.rawContent}>{message.content}</pre>
-                                    </div>
-                                }>
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkGfm, remarkMath]}
-                                        rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
-                                        components={{
-                                            code({ node, inline, className, children, ...props }: any) {
-                                                const match = /language-(\w+)/.exec(className || '')
-                                                return !inline ? (
-                                                    <CodeBlock
-                                                        language={match ? match[1] : ''}
-                                                        value={String(children).replace(/\n$/, '')}
-                                                        {...props}
-                                                    />
-                                                ) : (
-                                                    <code className={className} {...props}>
-                                                        {children}
-                                                    </code>
-                                                )
-                                            }
-                                        }}
-                                    >
+                                isLoading ? (
+                                    /* 
+                                     * PROGRESSIVE RENDERING PRO: 
+                                     * During streaming, complex Latex/Markdown can be incomplete (invalid),
+                                     * causing render crashes or layout shifts on mobile.
+                                     * We show raw text (or simple markdown) while streaming, 
+                                     * and switch to full rich render only when the message is complete.
+                                     */
+                                    <div className={styles.streamingText}>
                                         {message.content}
-                                    </ReactMarkdown>
-                                </ErrorBoundary>
+                                        <span className={styles.cursor}>|</span>
+                                    </div>
+                                ) : (
+                                    <ErrorBoundary fallback={
+                                        <div className={styles.errorState}>
+                                            <p>⚠️ 内容渲染出错</p>
+                                            <pre className={styles.rawContent}>{message.content}</pre>
+                                        </div>
+                                    }>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm, remarkMath]}
+                                            rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                            components={{
+                                                code({ node, inline, className, children, ...props }: any) {
+                                                    const match = /language-(\w+)/.exec(className || '')
+                                                    return !inline ? (
+                                                        <CodeBlock
+                                                            language={match ? match[1] : ''}
+                                                            value={String(children).replace(/\n$/, '')}
+                                                            {...props}
+                                                        />
+                                                    ) : (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    )
+                                                }
+                                            }}
+                                        >
+                                            {message.content}
+                                        </ReactMarkdown>
+                                    </ErrorBoundary>
+                                )
                             ) : (
                                 <p>{message.content}</p>
                             )}
