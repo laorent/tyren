@@ -205,7 +205,6 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
                                      */
                                     <div className={styles.streamingText}>
                                         {message.content}
-                                        <span className={styles.cursor}>|</span>
                                     </div>
                                 ) : (
                                     <ErrorBoundary fallback={
@@ -214,28 +213,30 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
                                             <pre className={styles.rawContent}>{message.content}</pre>
                                         </div>
                                     }>
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm, remarkMath]}
-                                            rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
-                                            components={{
-                                                code({ node, inline, className, children, ...props }: any) {
-                                                    const match = /language-(\w+)/.exec(className || '')
-                                                    return !inline ? (
-                                                        <CodeBlock
-                                                            language={match ? match[1] : ''}
-                                                            value={String(children).replace(/\n$/, '')}
-                                                            {...props}
-                                                        />
-                                                    ) : (
-                                                        <code className={className} {...props}>
-                                                            {children}
-                                                        </code>
-                                                    )
-                                                }
-                                            }}
-                                        >
-                                            {message.content}
-                                        </ReactMarkdown>
+                                        <div className={styles.renderedContent}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm, remarkMath]}
+                                                rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                                components={{
+                                                    code({ node, inline, className, children, ...props }: any) {
+                                                        const match = /language-(\w+)/.exec(className || '')
+                                                        return !inline ? (
+                                                            <CodeBlock
+                                                                language={match ? match[1] : ''}
+                                                                value={String(children).replace(/\n$/, '')}
+                                                                {...props}
+                                                            />
+                                                        ) : (
+                                                            <code className={className} {...props}>
+                                                                {children}
+                                                            </code>
+                                                        )
+                                                    }
+                                                }}
+                                            >
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        </div>
                                     </ErrorBoundary>
                                 )
                             ) : (

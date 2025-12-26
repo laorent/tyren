@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         const chat = model.startChat({
             history: chatHistory,
             generationConfig: {
-                maxOutputTokens: 2048,
+                maxOutputTokens: 8192,
             },
         })
 

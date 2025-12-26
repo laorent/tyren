@@ -115,42 +115,61 @@
 
 .codeBlockContainer {
     margin: 16px 0;
-    background: var(--bg-code);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
+    background: #0d1117;
+    /* Always dark for code */
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .codeBlockHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
-    background: var(--hover-overlay);
-    border-bottom: 1px solid var(--border-color);
+    padding: 10px 16px;
+    background: #1e1e1e;
+    /* Darker header for contrast */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px 8px 0 0;
+}
+
+/* Mac-style buttons */
+.codeBlockHeader::before {
+    content: '';
+    display: block;
+    width: 42px;
+    height: 10px;
+    background-image: linear-gradient(to right, #ff5f56 10px, transparent 10px, transparent 16px, #ffbd2e 16px, #ffbd2e 26px, transparent 26px, transparent 32px, #27c93f 32px);
+    border-radius: 5px;
 }
 
 .codeLanguage {
     font-size: 12px;
-    font-family: inherit;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    text-transform: lowercase;
+    color: #a0aec0;
+    margin-left: -50px;
+    /* Center partially */
 }
 
 .copyButton {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: transparent;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 4px 10px;
-    color: var(--text-muted);
-    font-size: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #a0aec0;
+    font-size: 11px;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.copyButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
 .copyButton:hover {
@@ -186,9 +205,14 @@
 
 .messageText th,
 .messageText td {
-    border: 1px solid var(--border-color);
-    padding: 8px;
+    border: 1px solid var(--border-subtle);
+    padding: 10px 14px;
     text-align: left;
+}
+
+.messageText tr:nth-child(even) {
+    background: var(--hover-overlay);
+    /* Striped rows */
 }
 
 .messageText th {
@@ -226,25 +250,20 @@
     min-height: 24px;
 }
 
-.cursor {
-    display: inline-block;
-    width: 2px;
-    height: 1.2em;
-    background: currentColor;
-    margin-left: 2px;
-    vertical-align: text-bottom;
-    animation: blink 1s step-end infinite;
+/* Final Rendered State Animation */
+.renderedContent {
+    animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-@keyframes blink {
-
-    0%,
-    100% {
-        opacity: 1;
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
     }
 
-    50% {
-        opacity: 0;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
