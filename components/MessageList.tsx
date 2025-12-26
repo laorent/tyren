@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
@@ -155,6 +155,101 @@ const ALL_QUESTIONS = [
     "简述中国古代建筑‘斗拱’的作用"
 ]
 
+const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message, isLoading: boolean, onCodeCopy?: (text: string) => void }) => {
+    return (
+        <div
+            className={`${styles.messageWrapper} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
+        >
+            <div className={styles.messageContent}>
+                <div className={styles.messageAvatar}>
+                    {message.role === 'user' ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    ) : (
+                        <svg viewBox="0 0 100 100" fill="none">
+                            <defs>
+                                <linearGradient id={`grad-${message.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#4facfe" />
+                                    <stop offset="100%" stopColor="#00f2fe" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 L50 10Z" fill={`url(#grad-${message.id})`} fillOpacity="0.1" stroke={`url(#grad-${message.id})`} strokeWidth="4" />
+                            <circle cx="50" cy="50" r="10" fill={`url(#grad-${message.id})`} />
+                        </svg>
+                    )}
+                </div>
+
+                <div className={styles.messageBubble}>
+                    {message.images && message.images.length > 0 && (
+                        <div className={styles.imagesGrid}>
+                            {message.images.map((image, index) => (
+                                <div key={index} className={styles.imageWrapper}>
+                                    <img src={image} alt={`Upload ${index + 1}`} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {message.content && (
+                        <div className={styles.messageText}>
+                            {message.role === 'assistant' ? (
+                                <ErrorBoundary fallback={
+                                    <div className={styles.errorState}>
+                                        <p>⚠️ 内容渲染出错</p>
+                                        <pre className={styles.rawContent}>{message.content}</pre>
+                                    </div>
+                                }>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkMath]}
+                                        rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                        components={{
+                                            code({ node, inline, className, children, ...props }: any) {
+                                                const match = /language-(\w+)/.exec(className || '')
+                                                return !inline ? (
+                                                    <CodeBlock
+                                                        language={match ? match[1] : ''}
+                                                        value={String(children).replace(/\n$/, '')}
+                                                        {...props}
+                                                    />
+                                                ) : (
+                                                    <code className={className} {...props}>
+                                                        {children}
+                                                    </code>
+                                                )
+                                            }
+                                        }}
+                                    >
+                                        {message.content}
+                                    </ReactMarkdown>
+                                </ErrorBoundary>
+                            ) : (
+                                <p>{message.content}</p>
+                            )}
+                        </div>
+                    )}
+
+                    {message.role === 'assistant' && !message.content && isLoading && (
+                        <div className={styles.loadingDots}>
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}, (prev: { message: Message, isLoading: boolean }, next: { message: Message, isLoading: boolean }) => {
+    // Custom comparison for performance
+    return prev.message.content === next.message.content &&
+        prev.message.images === next.message.images &&
+        prev.isLoading === next.isLoading;
+})
+
+MessageItem.displayName = 'MessageItem'
+
 export default function MessageList({ messages, isLoading, onSelectSuggestion }: MessageListProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [randomQuestions, setRandomQuestions] = useState<string[]>([])
@@ -276,92 +371,12 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     return (
         <div className={styles.messageList}>
             <div className={styles.messageContainer}>
-                {messages.map((message) => (
-                    <div
+                {messages.map((message, index) => (
+                    <MessageItem
                         key={message.id}
-                        className={`${styles.messageWrapper} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage
-                            }`}
-                    >
-                        <div className={styles.messageContent}>
-                            <div className={styles.messageAvatar}>
-                                {message.role === 'user' ? (
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                ) : (
-                                    <svg viewBox="0 0 100 100" fill="none">
-                                        <defs>
-                                            <linearGradient id="a-tech-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#4facfe" />
-                                                <stop offset="100%" stopColor="#00f2fe" />
-                                            </linearGradient>
-                                        </defs>
-                                        <path d="M50 10 L85 30 L85 70 L50 90 L15 70 L15 30 L50 10Z" fill="url(#a-tech-grad)" fillOpacity="0.1" stroke="url(#a-tech-grad)" strokeWidth="4" />
-                                        <circle cx="50" cy="50" r="10" fill="url(#a-tech-grad)" />
-                                    </svg>
-                                )}
-                            </div>
-
-                            <div className={styles.messageBubble}>
-                                {message.images && message.images.length > 0 && (
-                                    <div className={styles.imagesGrid}>
-                                        {message.images.map((image, index) => (
-                                            <div key={index} className={styles.imageWrapper}>
-                                                <img src={image} alt={`Upload ${index + 1}`} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {message.content && (
-                                    <div className={styles.messageText}>
-                                        {message.role === 'assistant' ? (
-                                            <ErrorBoundary fallback={
-                                                <div className={styles.errorState}>
-                                                    <p>⚠️ 内容渲染出错（可能是复杂的数学公式导致的）</p>
-                                                    <pre className={styles.rawContent}>{message.content}</pre>
-                                                </div>
-                                            }>
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                                    rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
-                                                    components={{
-                                                        code({ node, inline, className, children, ...props }: any) {
-                                                            const match = /language-(\w+)/.exec(className || '')
-                                                            return !inline ? (
-                                                                <CodeBlock
-                                                                    language={match ? match[1] : ''}
-                                                                    value={String(children).replace(/\n$/, '')}
-                                                                    {...props}
-                                                                />
-                                                            ) : (
-                                                                <code className={className} {...props}>
-                                                                    {children}
-                                                                </code>
-                                                            )
-                                                        }
-                                                    }}
-                                                >
-                                                    {message.content}
-                                                </ReactMarkdown>
-                                            </ErrorBoundary>
-                                        ) : (
-                                            <p>{message.content}</p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {message.role === 'assistant' && !message.content && isLoading && (
-                                    <div className={styles.loadingDots}>
-                                        <span></span>
-                                        <span></span>
-                                        <span></span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                        message={message}
+                        isLoading={isLoading && index === messages.length - 1}
+                    />
                 ))}
                 <div ref={messagesEndRef} />
             </div>

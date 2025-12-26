@@ -132,6 +132,8 @@ export default function ChatInterface() {
             }
 
             let accumulatedContent = ''
+            let lastUpdateTime = 0
+            const UPDATE_INTERVAL = 50 // Throttle updates to ~20fps max for mobile stability
 
             while (true) {
                 const { done, value } = await reader.read()
@@ -139,6 +141,8 @@ export default function ChatInterface() {
 
                 const chunk = decoder.decode(value, { stream: true })
                 const lines = chunk.split('\n')
+
+                let hasUpdates = false
 
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
@@ -152,20 +156,37 @@ export default function ChatInterface() {
                             }
                             if (parsed.content) {
                                 accumulatedContent += parsed.content
-                                setMessages(prev =>
-                                    prev.map(msg =>
-                                        msg.id === assistantMessageId
-                                            ? { ...msg, content: accumulatedContent }
-                                            : msg
-                                    )
-                                )
+                                hasUpdates = true
                             }
                         } catch (e) {
                             // Ignore parse errors
                         }
                     }
                 }
+
+                if (hasUpdates) {
+                    const now = Date.now()
+                    if (now - lastUpdateTime > UPDATE_INTERVAL) {
+                        setMessages(prev =>
+                            prev.map(msg =>
+                                msg.id === assistantMessageId
+                                    ? { ...msg, content: accumulatedContent }
+                                    : msg
+                            )
+                        )
+                        lastUpdateTime = now
+                    }
+                }
             }
+
+            // Final update to ensure everything is synced
+            setMessages(prev =>
+                prev.map(msg =>
+                    msg.id === assistantMessageId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                )
+            )
         } catch (error: any) {
             if (error.name === 'AbortError') {
                 console.log('Request aborted')
