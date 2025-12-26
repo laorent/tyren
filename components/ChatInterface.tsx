@@ -189,6 +189,26 @@ export default function ChatInterface() {
                 }
             }
 
+            // Process any remaining characters in the buffer
+            if (buffer && buffer.trim()) {
+                const lines = buffer.split('\n')
+                for (const line of lines) {
+                    if (line.trim() === '') continue
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6)
+                        if (data === '[DONE]') continue
+                        try {
+                            const parsed = JSON.parse(data)
+                            if (parsed.content) {
+                                accumulatedContent += parsed.content
+                            }
+                        } catch (e) {
+                            console.warn('Final buffer parse error:', e)
+                        }
+                    }
+                }
+            }
+
             // Final update to ensure everything is synced
             setMessages(prev =>
                 prev.map(msg =>

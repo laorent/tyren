@@ -117,6 +117,8 @@
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  /* Remove mobile tap highlight */
+  -webkit-tap-highlight-color: transparent;
   /* Smoother theme transitions */
   transition: background-color var(--transition-normal),
     border-color var(--transition-normal),
@@ -317,6 +319,8 @@ hr {
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0.5em 0;
+  max-width: 100%;
+  /* Prevent math from stretching container */
   /* Add smooth scrolling for math formulas */
   -webkit-overflow-scrolling: touch;
 }

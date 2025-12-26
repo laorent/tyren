@@ -56,8 +56,11 @@
 
 .messageBubble {
     min-width: 0;
+    /* Allow flex item to shrink below content size if needed */
     max-width: calc(100% - 48px);
     width: fit-content;
+    box-shadow: var(--shadow-sm);
+    /* Subtle depth */
 }
 
 .userMessage .messageBubble {
@@ -100,6 +103,8 @@
 .messageText {
     word-wrap: break-word;
     overflow-wrap: break-word;
+    word-break: break-word;
+    /* Ensure long words/formulas break */
     font-size: 15px;
     line-height: 1.6;
 }
