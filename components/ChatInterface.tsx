@@ -133,18 +133,26 @@ export default function ChatInterface() {
 
             let accumulatedContent = ''
             let lastUpdateTime = 0
-            const UPDATE_INTERVAL = 50 // Throttle updates to ~20fps max for mobile stability
+            let buffer = '' // Buffer for handling split chunks
+            const UPDATE_INTERVAL = 50
 
             while (true) {
                 const { done, value } = await reader.read()
                 if (done) break
 
                 const chunk = decoder.decode(value, { stream: true })
-                const lines = chunk.split('\n')
+                buffer += chunk
+
+                const lines = buffer.split('\n')
+                // The last element is a potential partial line, so we keep it in the buffer
+                // and process only the complete lines before it.
+                buffer = lines.pop() || ''
 
                 let hasUpdates = false
 
                 for (const line of lines) {
+                    if (line.trim() === '') continue;
+
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6)
                         if (data === '[DONE]') continue
@@ -159,7 +167,9 @@ export default function ChatInterface() {
                                 hasUpdates = true
                             }
                         } catch (e) {
-                            // Ignore parse errors
+                            // If JSON parse fails, it might be a corrupted line or edge case, 
+                            // but usually the buffer strategy prevents this.
+                            console.warn('JSON parse error:', e, line)
                         }
                     }
                 }
