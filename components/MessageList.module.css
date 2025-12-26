@@ -4,6 +4,10 @@
     padding: 20px;
     display: flex;
     flex-direction: column;
+    /* Prevent browser from automatically adjusting scroll position during streaming */
+    overflow-anchor: none;
+    /* Enable momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
 }
 
 .messageContainer {
@@ -211,6 +215,37 @@
 
 .loadingDots span:nth-child(3) {
     animation-delay: 0.4s;
+}
+
+/* Streaming State */
+.streamingText {
+    white-space: pre-wrap;
+    font-family: inherit;
+    line-height: 1.6;
+    color: var(--text-primary);
+    min-height: 24px;
+}
+
+.cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background: currentColor;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 /* Empty State */

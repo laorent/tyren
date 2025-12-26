@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai'
 
 export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
 
 export async function POST(req: Request) {
     try {
@@ -89,7 +91,7 @@ export async function POST(req: Request) {
         const chat = model.startChat({
             history: chatHistory,
             generationConfig: {
-                maxOutputTokens: 2048,
+                maxOutputTokens: 8192,
             },
         })
 
