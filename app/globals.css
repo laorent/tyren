@@ -65,29 +65,12 @@
 }
 
 /* Fallback for system preference if no theme is set */
-@media (prefers-color-scheme: dark) {
+/* Fallback for system preference - DISABLED to force white default as requested */
+/* @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg-primary: #0a0e27;
-    --bg-secondary: #141830;
-    --bg-tertiary: #1e2542;
-    --bg-chat: #0f1629;
-
-    --text-primary: #ffffff;
-    --text-secondary: #a0aec0;
-    --text-muted: #718096;
-
-    --border-color: rgba(255, 255, 255, 0.1);
-    --border-subtle: rgba(255, 255, 255, 0.05);
-    --hover-overlay: rgba(255, 255, 255, 0.05);
-
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-
-    --card-bg: rgba(20, 24, 48, 0.8);
-    --bg-code: #0d1117;
+     ... dark mode defaults removed to ensure white background ...
   }
-}
+} */
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {

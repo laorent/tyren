@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tyren-v7';
+const CACHE_NAME = 'tyren-v9';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',

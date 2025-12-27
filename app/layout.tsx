@@ -36,8 +36,7 @@ export default function RootLayout({
                             (function() {
                                 try {
                                     var theme = localStorage.getItem('tyren-theme');
-                                    var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
-                                    if (!theme && supportDarkMode) theme = 'dark';
+                                    // FORCE DEFAULT TO LIGHT based on user feedback
                                     if (!theme) theme = 'light';
                                     document.documentElement.setAttribute('data-theme', theme);
                                 } catch (e) {}
