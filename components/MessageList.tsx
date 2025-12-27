@@ -374,10 +374,14 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // Robustly remove spaces inside bold markers: ** text ** -> **text**
-            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
+            // 1. Robustly remove spaces inside bold markers: ** text ** -> **text**
             .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            // Fix latex formatting issues if any (optional but good for safety)
+            // 2. Fix CJK spacing: Add space between Chinese chars and bold markers to ensure rendering
+            // Matches Chinese char followed by **bold block** -> adds space
+            .replace(/([\u4e00-\u9fa5])(\*\*[^*]+?\*\*)/g, '$1 $2')
+            // Matches **bold block** followed by Chinese char -> adds space
+            .replace(/(\*\*[^*]+?\*\*)([\u4e00-\u9fa5])/g, '$1 $2')
+            // 3. Fix latex formatting issues
             .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
             .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
     }
