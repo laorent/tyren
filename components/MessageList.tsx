@@ -195,50 +195,37 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
                     {message.content && (
                         <div className={styles.messageText}>
                             {message.role === 'assistant' ? (
-                                isLoading ? (
-                                    /* 
-                                     * PROGRESSIVE RENDERING PRO: 
-                                     * During streaming, complex Latex/Markdown can be incomplete (invalid),
-                                     * causing render crashes or layout shifts on mobile.
-                                     * We show raw text (or simple markdown) while streaming, 
-                                     * and switch to full rich render only when the message is complete.
-                                     */
-                                    <div className={styles.streamingText}>
-                                        {message.content}
+                                <ErrorBoundary fallback={
+                                    <div className={styles.errorState}>
+                                        <p>⚠️ 内容渲染出错</p>
+                                        <pre className={styles.rawContent}>{message.content}</pre>
                                     </div>
-                                ) : (
-                                    <ErrorBoundary fallback={
-                                        <div className={styles.errorState}>
-                                            <p>⚠️ 内容渲染出错</p>
-                                            <pre className={styles.rawContent}>{message.content}</pre>
-                                        </div>
-                                    }>
-                                        <div className={styles.renderedContent}>
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm, remarkMath]}
-                                                rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
-                                                components={{
-                                                    code({ node, inline, className, children, ...props }: any) {
-                                                        const match = /language-(\w+)/.exec(className || '')
-                                                        return !inline ? (
-                                                            <CodeBlock
-                                                                language={match ? match[1] : ''}
-                                                                value={String(children).replace(/\n$/, '')}
-                                                                {...props}
-                                                            />
-                                                        ) : (
-                                                            <code className={className} {...props}>
-                                                                {children}
-                                                            </code>
-                                                        )
-                                                    }
-                                                }}
-                                            >
-                                                {message.content}
-                                            </ReactMarkdown>
-                                        </div>
-                                    </ErrorBoundary>
-                                )
+                                }>
+                                    <div className={styles.renderedContent}>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm, remarkMath]}
+                                            rehypePlugins={[[rehypeKatex, { strict: false, throwOnError: false }]]}
+                                            components={{
+                                                code({ node, inline, className, children, ...props }: any) {
+                                                    const match = /language-(\w+)/.exec(className || '')
+                                                    return !inline ? (
+                                                        <CodeBlock
+                                                            language={match ? match[1] : ''}
+                                                            value={String(children).replace(/\n$/, '')}
+                                                            {...props}
+                                                        />
+                                                    ) : (
+                                                        <code className={className} {...props}>
+                                                            {children}
+                                                        </code>
+                                                    )
+                                                }
+                                            }}
+                                        >
+                                            {message.content}
+                                        </ReactMarkdown>
+                                    </div>
+                                </ErrorBoundary>
                             ) : (
                                 <p>{message.content}</p>
                             )}
@@ -383,13 +370,29 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
         )
     }
 
+    // Fix common Markdown formatting issues from LLM output
+    const preprocessMarkdown = (content: string) => {
+        if (!content) return ''
+        return content
+            // Robustly remove spaces inside bold markers: ** text ** -> **text**
+            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
+            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
+            // Fix latex formatting issues if any (optional but good for safety)
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
+    }
+
     return (
         <div className={styles.messageList}>
             <div className={styles.messageContainer}>
                 {messages.map((message, index) => (
                     <MessageItem
                         key={message.id}
-                        message={message}
+                        message={{
+                            ...message,
+                            // Apply preprocessing to assistant messages
+                            content: message.role === 'assistant' ? preprocessMarkdown(message.content) : message.content
+                        }}
                         isLoading={isLoading && index === messages.length - 1}
                     />
                 ))}

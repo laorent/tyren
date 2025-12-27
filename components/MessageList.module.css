@@ -254,19 +254,7 @@
 
 /* Final Rendered State Animation */
 .renderedContent {
-    animation: fadeInUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    /* No animation for real-time streaming */
 }
 
 /* Empty State */
