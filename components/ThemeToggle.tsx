@@ -13,7 +13,8 @@ export default function ThemeToggle() {
             setTheme(savedTheme)
             document.documentElement.setAttribute('data-theme', savedTheme)
         } else {
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+            // Force default to light based on user request "White is fine"
+            const systemTheme = 'light' // was: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
             setTheme(systemTheme)
             document.documentElement.setAttribute('data-theme', systemTheme)
         }
