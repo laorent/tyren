@@ -58,11 +58,13 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
     }
 
     const compressImage = (file: File): Promise<string> => {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const reader = new FileReader();
+            reader.onerror = () => reject(new Error('无法读取文件'));
             reader.readAsDataURL(file);
             reader.onload = (event) => {
                 const img = new Image();
+                img.onerror = () => reject(new Error('无效的图片格式'));
                 img.src = event.target?.result as string;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
@@ -85,7 +87,6 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
 
                     canvas.width = width;
                     canvas.height = height;
-                    // Fill white background for transparent images before JPEG compression
                     const ctx = canvas.getContext('2d');
                     if (ctx) {
                         ctx.fillStyle = '#ffffff';
@@ -93,7 +94,6 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
                         ctx.drawImage(img, 0, 0, width, height);
                     }
 
-                    // Compress as JPEG with 0.7 quality to balance detail and token size
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                     resolve(dataUrl);
                 };
@@ -122,10 +122,21 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
             return;
         }
 
-        const uploadPromises = validFiles.map(file => compressImage(file));
-        const compressedImages = await Promise.all(uploadPromises);
+        try {
+            const uploadPromises = validFiles.map(file =>
+                compressImage(file).catch(err => {
+                    console.error('Compression failed:', err);
+                    return null;
+                })
+            );
+            const results = await Promise.all(uploadPromises);
+            const compressedImages = results.filter((img): img is string => img !== null);
 
-        setImages(prev => [...prev, ...compressedImages]);
+            setImages(prev => [...prev, ...compressedImages]);
+        } catch (error: any) {
+            console.error('Image upload failed:', error);
+            alert(`部分图片处理失败: ${error.message || '未知错误'}`);
+        }
 
         // Reset file input
         if (fileInputRef.current) {

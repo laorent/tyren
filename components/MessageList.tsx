@@ -58,7 +58,6 @@ function CodeBlock({ language, value }: { language: string, value: string }) {
     )
 }
 
-
 const ALL_QUESTIONS = [
     // 自然科学 (Natural Sciences)
     "解释一下广义相对论的核心概念",
@@ -106,7 +105,7 @@ const ALL_QUESTIONS = [
     "解释一下社会化过程中的‘镜中之我’理论",
     "什么是凯恩斯主义经济学？",
     "什么是皮亚杰的儿童认知发展阶段理论？",
-    "解释一下经济学中的‘格雷欣法则’（劣币驱逐良币）",
+    "解释一下经济学中的‘格雷希尔法则’（劣币驱逐良币）",
 
     // 哲学与思考 (Philosophy & Logic)
     "苏格拉底教学法的核心是什么？",
@@ -155,7 +154,7 @@ const ALL_QUESTIONS = [
     "简述中国古代建筑‘斗拱’的作用"
 ]
 
-const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message, isLoading: boolean, onCodeCopy?: (text: string) => void }) => {
+const MessageItem = memo(({ message, isLoading }: { message: Message, isLoading: boolean }) => {
     return (
         <div
             className={`${styles.messageWrapper} ${message.role === 'user' ? styles.userMessage : styles.assistantMessage}`}
@@ -243,8 +242,7 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
             </div>
         </div>
     )
-}, (prev: { message: Message, isLoading: boolean }, next: { message: Message, isLoading: boolean }) => {
-    // Custom comparison for performance
+}, (prev, next) => {
     return prev.message.content === next.message.content &&
         prev.message.images === next.message.images &&
         prev.isLoading === next.isLoading;
@@ -252,13 +250,29 @@ const MessageItem = memo(({ message, isLoading, onCodeCopy }: { message: Message
 
 MessageItem.displayName = 'MessageItem'
 
+// Fix common Markdown formatting issues from LLM output
+const preprocessMarkdown = (content: string) => {
+    if (!content) return ''
+    return content
+        // 1. Fix display math \[ \] to $$ $$
+        .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => `\n$$\n${formula.trim()}\n$$\n`)
+        // 2. Fix inline math \( \) to $ $
+        .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => `$${formula.trim()}$`)
+        // 3. Robust bold formatting for CJK (ensuring spaces ONLY when needed)
+        .replace(/\*\*\s*([^*]+?)\s*\*\*/g, (match, p1) => {
+            return ` **${p1.trim()}** `
+        })
+        // 4. Clean up any accidental triple spaces while maintaining paragraph breaks
+        .replace(/([^ ]) {2,}([^ ])/g, '$1 $2')
+}
+
 export default function MessageList({ messages, isLoading, onSelectSuggestion }: MessageListProps) {
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const [randomQuestions, setRandomQuestions] = useState<string[]>([])
     const [questionPool, setQuestionPool] = useState<string[]>([])
     const [poolIndex, setPoolIndex] = useState(0)
+    const prevMessagesLength = useRef(messages.length)
 
-    // Fisher-Yates shuffle helper
     const shuffle = (array: string[]) => {
         const shuffled = [...array]
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -271,36 +285,28 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const refreshQuestions = () => {
         let currentPool = questionPool
         let nextIndex = poolIndex
-
-        // If pool is empty or near exhaustion, reshuffle
         if (currentPool.length === 0 || nextIndex + 4 > currentPool.length) {
             currentPool = shuffle(ALL_QUESTIONS)
             nextIndex = 0
             setQuestionPool(currentPool)
         }
-
         const newSet = currentPool.slice(nextIndex, nextIndex + 4)
         setRandomQuestions(newSet)
         setPoolIndex(nextIndex + 4)
     }
 
     useEffect(() => {
-        // Randomize questions on mount or when chat is cleared
         if (messages.length === 0) {
             refreshQuestions()
         }
     }, [messages.length])
-
-    const prevMessagesLength = useRef(messages.length)
 
     const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
         messagesEndRef.current?.scrollIntoView({ behavior })
     }
 
     useEffect(() => {
-        // Fix for mobile: Use 'auto' (instant) scroll during streaming to prevent
-        // layout thrashing and "jumping" glitches caused by overlapping smooth animations.
-        // Only use smooth scroll when a completely new message bubble is added.
+        // Fix for mobile: Use 'auto' scroll during streaming, 'smooth' for new user messages
         const isNewMessage = messages.length > prevMessagesLength.current
         const isStreamingUpdate = messages.length === prevMessagesLength.current && isLoading
 
@@ -330,9 +336,7 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                     </svg>
                 </div>
                 <h2 className={styles.emptyTitle}>开始新对话</h2>
-                <p className={styles.emptySubtitle}>
-                    我是 Tyren AI，支持文本处理、图像解析与实时数据检索
-                </p>
+                <p className={styles.emptySubtitle}>我是 Tyren AI，支持文本处理、图像解析与实时数据检索</p>
                 <div className={styles.suggestions}>
                     <div className={styles.suggestionCard} onClick={() => onSelectSuggestion("支持长上下文对话是什么意思？")}>
                         <div className={styles.suggestionIcon}>💬</div>
@@ -347,7 +351,6 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                         <p>实时联网搜索</p>
                     </div>
                 </div>
-
                 <div className={styles.questionSection}>
                     <div className={styles.questionHeader}>
                         <p className={styles.questionHint}>猜你想问：</p>
@@ -360,26 +363,12 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                     </div>
                     <div className={styles.questionGrid}>
                         {randomQuestions.map((q, i) => (
-                            <button key={i} className={styles.questionItem} onClick={() => onSelectSuggestion(q)}>
-                                {q}
-                            </button>
+                            <button key={i} className={styles.questionItem} onClick={() => onSelectSuggestion(q)}>{q}</button>
                         ))}
                     </div>
                 </div>
             </div>
         )
-    }
-
-    // Fix common Markdown formatting issues from LLM output
-    const preprocessMarkdown = (content: string) => {
-        if (!content) return ''
-        return content
-            // Robustly remove spaces inside bold markers: ** text ** -> **text**
-            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
-            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            // Fix latex formatting issues if any (optional but good for safety)
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
     }
 
     return (
@@ -390,7 +379,6 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
                         key={message.id}
                         message={{
                             ...message,
-                            // Apply preprocessing to assistant messages
                             content: message.role === 'assistant' ? preprocessMarkdown(message.content) : message.content
                         }}
                         isLoading={isLoading && index === messages.length - 1}
