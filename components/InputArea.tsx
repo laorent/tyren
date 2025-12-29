@@ -59,16 +59,22 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
 
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error('图片处理超时'));
+            }, 10000); // 10s timeout
+
             const reader = new FileReader();
-            reader.onerror = () => reject(new Error('无法读取文件'));
             reader.readAsDataURL(file);
             reader.onload = (event) => {
                 const img = new Image();
-                img.onerror = () => reject(new Error('无效的图片格式'));
                 img.src = event.target?.result as string;
+                img.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error('图片加载失败'));
+                };
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1200; // Optimized for Gemini analysis
+                    const MAX_WIDTH = 1200;
                     const MAX_HEIGHT = 1200;
                     let width = img.width;
                     let height = img.height;
@@ -95,8 +101,13 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
                     }
 
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    clearTimeout(timeout);
                     resolve(dataUrl);
                 };
+            };
+            reader.onerror = () => {
+                clearTimeout(timeout);
+                reject(new Error('文件读取失败'));
             };
         });
     };
@@ -123,15 +134,8 @@ export default function InputArea({ onSend, disabled, onStop, externalContent }:
         }
 
         try {
-            const uploadPromises = validFiles.map(file =>
-                compressImage(file).catch(err => {
-                    console.error('Compression failed:', err);
-                    return null;
-                })
-            );
-            const results = await Promise.all(uploadPromises);
-            const compressedImages = results.filter((img): img is string => img !== null);
-
+            const uploadPromises = validFiles.map(file => compressImage(file));
+            const compressedImages = await Promise.all(uploadPromises);
             setImages(prev => [...prev, ...compressedImages]);
         } catch (error: any) {
             console.error('Image upload failed:', error);

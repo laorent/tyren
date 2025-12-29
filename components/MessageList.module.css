@@ -269,8 +269,7 @@
 
 /* Final Rendered State Animation */
 .renderedContent {
-    display: contents;
-    /* Ensures layout doesn't break while keeping rule alive */
+    /* No animation for real-time streaming */
 }
 
 /* Empty State */
