@@ -374,17 +374,12 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // 1. Internal collapse: ** text ** -> **text**
+            // Robustly remove spaces inside bold markers: ** text ** -> **text**
+            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
             .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            // 2. External isolation: Ensure space around ** to trigger renderer
-            // This fixes cases like "文本**加粗**文本" -> "文本 **加粗** 文本"
-            .replace(/([^\s*])(\*\*)/g, '$1 $2')
-            .replace(/(\*\*)([^\s*])/g, '$1 $2')
-            // 3. Fix alternative formats
-            .replace(/__\s*([^_]+?)\s*__/g, '__$1__')
-            // 4. Fix latex formatting issues
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
+            // Fix latex formatting issues if any (optional but good for safety)
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
     }
 
     return (
