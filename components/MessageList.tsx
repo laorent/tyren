@@ -370,16 +370,17 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
         )
     }
 
-    // Fix common Markdown formatting issues from LLM output
+    // Higher-order cleanup for LLM markdown quirks
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // Robustly remove spaces inside bold markers: ** text ** -> **text**
-            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
-            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            // Fix latex formatting issues if any (optional but good for safety)
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
+            // Fix bold with internal spaces: ** text ** -> **text**
+            .replace(/\*\*([^*]+?)\*\*/g, (_, p1) => `**${p1.trim()}**`)
+            // Fix underscore bold: __ text __ -> __text__
+            .replace(/__([^_]+?)__/g, (_, p1) => `__${p1.trim()}__`)
+            // Standardize LaTeX delimiters to $$ for better remark-math compatibility
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
     }
 
     return (
