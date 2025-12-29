@@ -374,12 +374,14 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // 1. Fix bold-italic: *** text *** -> ***text***
-            .replace(/\*\*\*\s*([\s\S]+?)\s*\*\*\*/g, '***$1***')
-            // 2. Fix bold: ** text ** -> **text**
-            .replace(/\*\*\s*([\s\S]+?)\s*\*\*/g, '**$1**')
-            // 3. Fix alternative bold: __ text __ -> __text__
-            .replace(/__\s*([\s\S]+?)\s*__/g, '__$1__')
+            // 1. Internal collapse: ** text ** -> **text**
+            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
+            // 2. External isolation: Ensure space around ** to trigger renderer
+            // This fixes cases like "文本**加粗**文本" -> "文本 **加粗** 文本"
+            .replace(/([^\s*])(\*\*)/g, '$1 $2')
+            .replace(/(\*\*)([^\s*])/g, '$1 $2')
+            // 3. Fix alternative formats
+            .replace(/__\s*([^_]+?)\s*__/g, '__$1__')
             // 4. Fix latex formatting issues
             .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
             .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
