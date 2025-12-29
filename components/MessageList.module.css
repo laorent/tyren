@@ -85,38 +85,23 @@
 }
 
 .imagesGrid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px;
     margin-bottom: 12px;
-    max-width: 100%;
 }
 
 .imageWrapper {
-    border-radius: 12px;
+    border-radius: 8px;
     overflow: hidden;
     background: var(--bg-tertiary);
-    max-width: 200px;
-    /* Reduced width for more compact look */
-    max-height: 260px;
-    /* Limit height for tall screenshots */
-    min-width: 80px;
-    flex: 0 1 auto;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    aspect-ratio: 1;
 }
 
 .imageWrapper img {
     width: 100%;
     height: 100%;
-    display: block;
     object-fit: cover;
-    /* Crop to fit the thumbnail area */
-    cursor: zoom-in;
-    transition: transform 0.3s ease;
-}
-
-.imageWrapper img:hover {
-    transform: scale(1.02);
 }
 
 .messageText {

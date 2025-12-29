@@ -374,18 +374,12 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // Fix latex formatting issues
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
-            // Fix bold formatting:
-            // 1. Remove internal spaces: ** bold ** -> **bold**
-            // 2. Add external spaces for CJK characters: 文本**粗体**文本 -> 文本 **粗体** 文本
-            // This is a common fix for Markdown parsers that fail to recognize bold tags when stuck to Chinese chars.
-            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, (match, p1) => {
-                return ` **${p1.trim()}** `
-            })
-            // Clean up potentially introduced double spaces (but keep double newlines)
-            .replace(/([^ ]) {2,}([^ ])/g, '$1 $2')
+            // Robustly remove spaces inside bold markers: ** text ** -> **text**
+            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
+            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
+            // Fix latex formatting issues if any (optional but good for safety)
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
     }
 
     return (
