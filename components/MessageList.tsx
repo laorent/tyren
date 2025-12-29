@@ -370,16 +370,22 @@ export default function MessageList({ messages, isLoading, onSelectSuggestion }:
         )
     }
 
-    // Fix common Markdown formatting issues from LLM output
+    // Fix common Markdown formatting issues from LLM output, specifically for Chinese text
     const preprocessMarkdown = (content: string) => {
         if (!content) return ''
         return content
-            // Robustly remove spaces inside bold markers: ** text ** -> **text**
-            // Matches ** followed by optional whitespace, any non-star content, optional whitespace, then **
-            .replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**')
-            // Fix latex formatting issues if any (optional but good for safety)
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Fix \[ \] to $$ $$
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Fix \( \) to $ $
+            // 1. Fix spaces inside bold/italic markers: ** text ** -> **text**
+            .replace(/(\*\*|__)\s*([^*_]+?)\s*(\*\*|__)/g, '$1$2$3')
+            // 2. Add spaces between Chinese characters and bold markers (Pangu-style fix)
+            // This is crucial because many parsers fail to recognize bolding when it's attached to Chinese
+            .replace(/([\u4e00-\u9fa5])(\*\*|__)/g, '$1 $2') // Chinese followed by **
+            .replace(/(\*\*|__)([\u4e00-\u9fa5])/g, '$1 $2') // ** followed by Chinese
+            // 3. Fix edge case where multiple spaces might be added
+            .replace(/\s{2,}\*\*/g, ' **')
+            .replace(/\*\*\s{2,}/g, '** ')
+            // 4. Fix latex formatting issues
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
     }
 
     return (
