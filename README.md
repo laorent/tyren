@@ -1,13 +1,14 @@
 # Tyren AI Assistant
 
-Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Router)**、**React 19** 和 **Google Gemini API** 构建。项目默认使用 `gemini-2.5-flash`，并提供流式对话、联网搜索、图片输入、思考模式和 PWA 支持。
+Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Router)**、**React 19** 和 **Google Gemini API** 构建。常规对话模型可通过 `GEMINI_MODEL` 自定义；思考模式默认使用 `gemini-3.7-flash`，并提供流式对话、联网搜索、图片输入和 PWA 支持。
 
 ## 🚀 核心功能
 
 ### 🧠 深度思考模式 (Thinking Mode)
 - **思考内容实时流**: 开启“深度思考”开关后，后端将调用指定的思考模型，并在模型返回 `thought` 内容时实时展示。
 - **折叠式 UI**: 推理过程默认以精致的折叠块呈现，支持随时展开复核 AI 的逻辑。
-- **动态模型切换**: 可通过环境变量为“思考模式”配置专门模型，推荐 `gemini-3.1-flash`；未配置时后端会回退到 `GEMINI_MODEL` 或 `gemini-2.5-flash`。
+- **Gemini 3.7 深度思考**: 开启“深度思考”时默认使用 `gemini-3.7-flash` 的 `high` 推理等级并实时展示模型摘要。可通过环境变量将其调整为 `low`、`medium` 或 `high`。
+- **模型自定义**: 常规对话完全由 `GEMINI_MODEL` 决定，不会附加 Gemini 3.7 专属参数；思考模式可单独通过 `GEMINI_THINKING_MODEL` 配置。
 - **重新生成回答**: 当请求失败或对最后一条回答不满意时，可点击“重新生成”按钮，用同一条用户消息重新生成回答。
 
 ### 🎨 现代极简主义设计
@@ -41,8 +42,9 @@ Tyren 是一个**高性能**的 AI 对话助手，基于 **Next.js 15 (App Route
 | `GEMINI_API_KEY` | ✅ | [Google AI Studio](https://aistudio.google.com/) 获取 | `AIza...` |
 | `WEB_ACCESS_PASSWORD` | ✅ | 网页访问密码（后台会自动加盐哈希） | `建议12位以上` |
 | `AUTH_TOKEN_TTL_HOURS` | ❌ | 登录 Token 有效期（小时） | `24` |
-| `GEMINI_MODEL` | ❌ | 常规对话使用的模型 | `gemini-2.5-flash` |
-| `GEMINI_THINKING_MODEL` | ❌ | 思考模式使用的模型；未配置时回退到 `GEMINI_MODEL` | `gemini-3.1-flash` |
+| `GEMINI_MODEL` | ❌ | 常规对话使用的自定义模型 | `gemini-2.5-flash` |
+| `GEMINI_THINKING_MODEL` | ❌ | 思考模式使用的模型；未配置时使用 `gemini-3.7-flash` | `gemini-3.7-flash` |
+| `GEMINI_THINKING_LEVEL` | ❌ | 思考模式的推理等级，只支持 `low`、`medium`、`high` | `high` |
 
 3. **Deploy**！访问你的自定义域名即可开始对话。
 

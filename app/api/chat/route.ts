@@ -1,4 +1,4 @@
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai'
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold, ThinkingLevel } from '@google/genai'
 import { verifyToken } from '@/lib/server-auth'
 import type { ChatRequestBody, ChatRequestMessage } from '@/lib/types'
 
@@ -9,6 +9,26 @@ export const maxDuration = 120
 const MAX_MESSAGES = 20
 const MAX_MESSAGE_LENGTH = 50000
 const MAX_IMAGES_PER_MSG = 5
+const DEFAULT_MODEL = 'gemini-2.5-flash'
+const DEFAULT_THINKING_MODEL = 'gemini-3.7-flash'
+
+function getThinkingLevel(): ThinkingLevel {
+    const configuredLevel = process.env.GEMINI_THINKING_LEVEL?.trim().toLowerCase()
+
+    switch (configuredLevel) {
+        case 'low':
+            return ThinkingLevel.LOW
+        case 'medium':
+            return ThinkingLevel.MEDIUM
+        case 'high':
+        case undefined:
+        case '':
+            return ThinkingLevel.HIGH
+        default:
+            console.warn(`[Gemini] Ignoring unsupported GEMINI_THINKING_LEVEL: ${configuredLevel}`)
+            return ThinkingLevel.HIGH
+    }
+}
 
 const SYSTEM_PROMPT = `# Identity
 You are Tyren, a highly capable, insightful, and knowledgeable AI assistant.
@@ -147,8 +167,8 @@ export async function POST(req: Request) {
 
         const apiKey = process.env.GEMINI_API_KEY
         const activeModel = thinkingEnabled
-            ? (process.env.GEMINI_THINKING_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash')
-            : (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+            ? (process.env.GEMINI_THINKING_MODEL || DEFAULT_THINKING_MODEL)
+            : (process.env.GEMINI_MODEL || DEFAULT_MODEL)
 
         if (!apiKey) {
             return new Response(JSON.stringify({ error: '模型 API Key 未配置。请在环境变量中设置 GEMINI_API_KEY。' }), {
@@ -169,16 +189,7 @@ export async function POST(req: Request) {
 
         const currentSystemPrompt = `${SYSTEM_PROMPT}${searchPromptExtension}`
 
-        const chatHistory: HistoryItem[] = [
-            {
-                role: 'user',
-                parts: [{ text: `[System Instructions]\n${currentSystemPrompt}` }],
-            },
-            {
-                role: 'model',
-                parts: [{ text: 'Understood. I will follow these instructions.' }],
-            },
-        ]
+        const chatHistory: HistoryItem[] = []
 
         for (const msg of messages.slice(0, -1)) {
             chatHistory.push({
@@ -201,7 +212,8 @@ export async function POST(req: Request) {
             model: activeModel,
             history: chatHistory,
             config: {
-                maxOutputTokens: thinkingEnabled ? 16384 : 8192,
+                systemInstruction: currentSystemPrompt,
+                maxOutputTokens: thinkingEnabled ? 32768 : 8192,
                 safetySettings: [
                     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
                     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
@@ -209,8 +221,8 @@ export async function POST(req: Request) {
                     { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
                 ],
                 tools: searchEnabled ? [{ googleSearch: {} }] : undefined,
-                thinkingConfig: thinkingEnabled && !activeModel.includes('thinking')
-                    ? { includeThoughts: true }
+                thinkingConfig: thinkingEnabled
+                    ? { includeThoughts: true, thinkingLevel: getThinkingLevel() }
                     : undefined,
             },
         })
